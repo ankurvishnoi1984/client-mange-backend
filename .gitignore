@@ -1,0 +1,16 @@
+design/
+*.csv
+*.sql
+*.xlsx
+*.log
+launch.json
+error.log
+*.zip
+*.pptx
+*.png
+*.txt
+*.xls
+*.csv
+*.xlsx
+node_modules
+.env
