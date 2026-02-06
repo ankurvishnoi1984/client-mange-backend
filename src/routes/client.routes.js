@@ -1,30 +1,26 @@
 const router = require("express").Router();
 const controller = require("../controllers/client.controller");
-const auth = require("../middlewares/auth.middleware");
 const {
   uploadClientLogo,
   compressClientLogo
 } = require("../middlewares/uploadClientLogo");
 
 router.post(
-  "/",
-  auth(["ADMIN"]),
+  "/addNewClient",
   uploadClientLogo,
   compressClientLogo,
   controller.addClient
 );
 
 router.put(
-  "/:clientCode",
-  auth(["ADMIN"]),
+  "/updateClient/:clientCode",
   uploadClientLogo,
   compressClientLogo,
   controller.updateClient
 );
 
 router.delete(
-  "/:clientCode",
-  auth(["ADMIN"]),
+  "/disableClient/:clientCode",
   controller.disableClient
 );
 

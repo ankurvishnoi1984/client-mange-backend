@@ -1,4 +1,4 @@
-const { poolPromise, sql } = require("../db/mssql");
+const { poolPromise, sql } = require("mssql");
 
 exports.addClient = async (data, createdBy) => {
   const pool = await poolPromise;

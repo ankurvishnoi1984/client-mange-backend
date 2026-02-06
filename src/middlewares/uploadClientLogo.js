@@ -3,7 +3,7 @@ const sharp = require("sharp");
 const path = require("path");
 const fs = require("fs");
 
-const uploadDir = "/uploads";
+const uploadDir = "src/uploads";
 
 // Ensure upload directory exists
 if (!fs.existsSync(uploadDir)) {
