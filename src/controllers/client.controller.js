@@ -58,3 +58,46 @@ exports.getClientByCode = async (req, res) => {
     res.status(400).json({ error: err.message });
   }
 };
+
+exports.getClientList = async (req, res) => {
+  try {
+    const { page, limit, search, status } = req.query;
+
+    const result = await clientService.getClientList({
+      page: Number(page) || 1,
+      limit: Number(limit) || 10,
+      search,
+      status
+    });
+
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({
+      message: "Failed to fetch client list",
+      error: err.message
+    });
+  }
+};
+ /*
+ {
+  "data": [
+    {
+      "client_code": 17684,
+      "name": "Acme Corp",
+      "shortcode": "ACME",
+      "contactperson": "John",
+      "contactnumber": "9876543210",
+      "domain_url": "https://acme.com",
+      "clientlogo": "client_1707051234.webp",
+      "status": "A",
+      "createddate": "2026-02-05T10:30:00.000Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 27
+  }
+}
+
+ */

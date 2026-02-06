@@ -30,4 +30,10 @@ router.get(
 );
 
 
+router.get(
+  "/getClientList",
+  controller.getClientList
+);
+
+
 module.exports = router;

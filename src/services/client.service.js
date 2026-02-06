@@ -87,12 +87,6 @@ exports.disableClient = async (clientCode) => {
 exports.getClientByCode = async (clientCode) => {
   const pool = await poolPromise;
 
-  const schemaCheck = await pool.request().query(`
-  SELECT OBJECT_SCHEMA_NAME(OBJECT_ID('client_mst')) AS schema_name
-`);
-  console.log(schemaCheck.recordset);
-
-
   const result = await pool.request()
     .input("client_code", sql.Int, clientCode)
     .query(`
@@ -114,4 +108,68 @@ exports.getClientByCode = async (clientCode) => {
       WHERE client_code = @client_code
       `);
   return result.recordset[0] || null;
+};
+
+exports.getClientList = async ({ page = 1, limit = 10, search, status }) => {
+  const pool = await poolPromise;
+
+  const offset = (page - 1) * limit;
+
+  let whereClause = "WHERE 1=1";
+  if (search) {
+    whereClause += `
+      AND (
+        name LIKE '%' + @search + '%'
+        OR shortcode LIKE '%' + @search + '%'
+      )
+    `;
+  }
+
+  if (status) {
+    whereClause += " AND status = @status";
+  }
+
+  // 👉 Data query
+  const dataQuery = `
+    SELECT
+      client_code,
+      name,
+      shortcode,
+      contactperson,
+      contactnumber,
+      domain_url,
+      clientlogo,
+      status,
+      createddate
+    FROM dbo.client_mst
+    ${whereClause}
+    ORDER BY createddate DESC
+    OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY
+  `;
+
+  // 👉 Count query (for pagination)
+  const countQuery = `
+    SELECT COUNT(*) AS total
+    FROM dbo.client_mst
+    ${whereClause}
+  `;
+
+  const request = pool.request()
+    .input("offset", sql.Int, offset)
+    .input("limit", sql.Int, limit);
+
+  if (search) request.input("search", sql.VarChar, search);
+  if (status) request.input("status", sql.Char(1), status);
+
+  const dataResult = await request.query(dataQuery);
+  const countResult = await request.query(countQuery);
+
+  return {
+    data: dataResult.recordset,
+    pagination: {
+      page,
+      limit,
+      total: countResult.recordset[0].total
+    }
+  };
 };
