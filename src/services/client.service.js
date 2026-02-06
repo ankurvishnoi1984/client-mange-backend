@@ -26,7 +26,7 @@ exports.addClient = async (data, createdBy) => {
         @name, @shortcode, @contactperson, @contactnumber,
         @domain_url, @clientlogo, @clientfavicon,
         @layoutid, @themeid, @isallowmultisession,
-        'A', @createdby, GETDATE()
+        'Y', @createdby, GETDATE()
       )
     `);
 
@@ -64,8 +64,9 @@ exports.updateClient = async (clientCode, data) => {
         themeid=@themeid,
         isallowmultisession=@isallowmultisession
       WHERE client_code=@client_code
-        AND status='A'
+        AND status='Y'
     `);
+  // console.log("result",result)
 };
 
 
@@ -80,4 +81,37 @@ exports.disableClient = async (clientCode) => {
       SET status='N'
       WHERE client_code=@client_code
     `);
+};
+
+
+exports.getClientByCode = async (clientCode) => {
+  const pool = await poolPromise;
+
+  const schemaCheck = await pool.request().query(`
+  SELECT OBJECT_SCHEMA_NAME(OBJECT_ID('client_mst')) AS schema_name
+`);
+  console.log(schemaCheck.recordset);
+
+
+  const result = await pool.request()
+    .input("client_code", sql.Int, clientCode)
+    .query(`
+      SELECT
+        client_code,
+        name,
+        shortcode,
+        contactperson,
+        contactnumber,
+        domain_url,
+        clientlogo,
+        layoutid,
+        themeid,
+        isallowmultisession,
+        status,
+        createdby,
+        createddate
+      FROM dbo.client_mst
+      WHERE client_code = @client_code
+      `);
+  return result.recordset[0] || null;
 };

@@ -7,8 +7,8 @@ exports.addClient = async (req, res) => {
       clientlogo: req.file ? req.file.filename : null
     };
 
-    await clientService.addClient(data, req.user.userId);
-    res.json({ message: "Client added successfully" });
+    const result= await clientService.addClient(data, req.body.createdby);
+    res.json({ message: "Client added successfully",_id:result.recordset[0].client_code });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -36,6 +36,24 @@ exports.disableClient = async (req, res) => {
     const { clientCode } = req.params;
     await clientService.disableClient(clientCode);
     res.json({ message: "Client disabled successfully" });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
+exports.getClientByCode = async (req, res) => {
+  try {
+    const { clientCode } = req.params;
+
+    const client = await clientService.getClientByCode(clientCode);
+
+    if (!client) {
+      return res.status(404).json({
+        message: "Client not found"
+      });
+    }
+
+    res.json(client);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }

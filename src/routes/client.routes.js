@@ -24,4 +24,10 @@ router.delete(
   controller.disableClient
 );
 
+router.get(
+  "/getClient/:clientCode",
+  controller.getClientByCode
+);
+
+
 module.exports = router;

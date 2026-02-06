@@ -19,6 +19,12 @@ const poolPromise = new sql.ConnectionPool(config)
   })
   .catch(err => console.log("DB Connection Failed", err));
 
+  poolPromise.then(async pool => {
+  const res = await pool.request().query("SELECT DB_NAME() AS db");
+  console.log("✅ Connected to DB:", res.recordset[0].db);
+});
+
+
 module.exports = {
   sql,
   poolPromise
