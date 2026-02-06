@@ -49,7 +49,7 @@ exports.getClientByCode = async (req, res) => {
 
     if (!client) {
       return res.status(404).json({
-        message: "Client not found"
+         message: `Client not found with client_code ${clientCode}`
       });
     }
 
