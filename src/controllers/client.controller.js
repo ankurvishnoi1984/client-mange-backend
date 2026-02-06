@@ -7,8 +7,8 @@ exports.addClient = async (req, res) => {
       clientlogo: req.file ? req.file.filename : null
     };
 
-    const result= await clientService.addClient(data, req.body.createdby);
-    res.json({ message: "Client added successfully",_id:result.recordset[0].client_code });
+    const result = await clientService.addClient(data, req.body.createdby);
+    res.json({ message: "Client added successfully",result });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }

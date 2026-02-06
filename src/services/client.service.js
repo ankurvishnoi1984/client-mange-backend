@@ -1,9 +1,9 @@
 const { poolPromise, sql } = require("../models/db");
 
-exports.addClient = async (data, createdBy) => {
+exports.addClient = async (data, createdby) => {
   const pool = await poolPromise;
 
-  const result = await pool.request()
+   const result = await pool.request()
     .input("name", sql.VarChar(50), data.name)
     .input("shortcode", sql.VarChar(50), data.shortcode)
     .input("contactperson", sql.VarChar(50), data.contactperson)
@@ -14,7 +14,7 @@ exports.addClient = async (data, createdBy) => {
     .input("layoutid", sql.Int, data.layoutid)
     .input("themeid", sql.Int, data.themeid)
     .input("isallowmultisession", sql.Char(1), data.isallowmultisession)
-    .input("createdby", sql.Int, createdBy)
+    .input("createdby", sql.Int, createdby)
     .query(`
       INSERT INTO client_mst (
         name, shortcode, contactperson, contactnumber,
@@ -28,9 +28,10 @@ exports.addClient = async (data, createdBy) => {
         @layoutid, @themeid, @isallowmultisession,
         'Y', @createdby, GETDATE()
       )
+      SELECT CAST(SCOPE_IDENTITY() AS INT) AS client_code;
     `);
 
-  return result;
+  return result.recordsets[0][0];
 };
 
 
