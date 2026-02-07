@@ -1,6 +1,6 @@
 const clientService = require("../services/client.service");
 
-exports.addClient = async (req, res) => {
+/*exports.addClient = async (req, res) => {
   try {
     const data = {
       ...req.body,
@@ -12,7 +12,44 @@ exports.addClient = async (req, res) => {
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
+};*/
+
+exports.addClient = async (req, res) => {
+  try {
+    const { userid } = req.body;
+
+    if (!userid) {
+      return res.status(400).json({
+        message: "userid is required for client mapping"
+      });
+    }
+
+    const data = {
+      ...req.body,
+      clientlogo: req.file ? req.file.filename : null
+    };
+
+    const clientCode = await clientService.addClientWithMapping(
+      data,
+      userid,
+      req.body.createdby
+    );
+
+    return res.status(201).json({
+      message: "Client added successfully",
+      client_code: clientCode
+    });
+
+  } catch (err) {
+    console.error("Add Client Controller Error:", err);
+
+    return res.status(500).json({
+      message: "Failed to add client",
+      error: err.message
+    });
+  }
 };
+
 
 exports.updateClient = async (req, res) => {
   try {
@@ -49,7 +86,7 @@ exports.getClientByCode = async (req, res) => {
 
     if (!client) {
       return res.status(404).json({
-         message: `Client not found with client_code ${clientCode}`
+        message: `Client not found with client_code ${clientCode}`
       });
     }
 
@@ -78,26 +115,26 @@ exports.getClientList = async (req, res) => {
     });
   }
 };
- /*
- {
-  "data": [
-    {
-      "client_code": 17684,
-      "name": "Acme Corp",
-      "shortcode": "ACME",
-      "contactperson": "John",
-      "contactnumber": "9876543210",
-      "domain_url": "https://acme.com",
-      "clientlogo": "client_1707051234.webp",
-      "status": "A",
-      "createddate": "2026-02-05T10:30:00.000Z"
-    }
-  ],
-  "pagination": {
-    "page": 1,
-    "limit": 10,
-    "total": 27
-  }
+/*
+{
+ "data": [
+   {
+     "client_code": 17684,
+     "name": "Acme Corp",
+     "shortcode": "ACME",
+     "contactperson": "John",
+     "contactnumber": "9876543210",
+     "domain_url": "https://acme.com",
+     "clientlogo": "client_1707051234.webp",
+     "status": "A",
+     "createddate": "2026-02-05T10:30:00.000Z"
+   }
+ ],
+ "pagination": {
+   "page": 1,
+   "limit": 10,
+   "total": 27
+ }
 }
 
- */
+*/

@@ -21,7 +21,7 @@ app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
    ROUTES
 ======================= */
 app.use("/clients", require("./routes/client.routes"));
-// app.use("/auth", require("./routes/auth.routes")); // if auth exists
+app.use("/users", require("./routes/user.routes"));
 
 /* =======================
    ERROR HANDLER

@@ -34,6 +34,98 @@ exports.addClient = async (data, createdby) => {
   return result.recordsets[0][0];
 };
 
+exports.addClientWithMapping = async (data, mappedUserId, createdBy) => {
+  const pool = await poolPromise;
+  const transaction = new sql.Transaction(pool);
+
+  try {
+    await transaction.begin();
+
+    /* =========================
+       1️⃣ INSERT CLIENT
+    ========================= */
+    const clientReq = new sql.Request(transaction);
+
+    const clientResult = await clientReq
+      .input("name", sql.VarChar(50), data.name)
+      .input("shortcode", sql.VarChar(50), data.shortcode)
+      .input("contactperson", sql.VarChar(50), data.contactperson)
+      .input("contactnumber", sql.VarChar(20), data.contactnumber)
+      .input("domain_url", sql.VarChar(100), data.domain_url)
+      .input("clientlogo", sql.VarChar(250), data.clientlogo)
+      .input("layoutid", sql.Int, data.layoutid)
+      .input("themeid", sql.Int, data.themeid)
+      .input("isallowmultisession", sql.Char(1), data.isallowmultisession)
+      .input("createdby", sql.Int, createdBy)
+      .query(`
+        INSERT INTO dbo.client_mst (
+          name, shortcode, contactperson, contactnumber,
+          domain_url, clientlogo,
+          layoutid, themeid, isallowmultisession,
+          status, createdby, createddate
+        )
+        VALUES (
+          @name, @shortcode, @contactperson, @contactnumber,
+          @domain_url, @clientlogo,
+          @layoutid, @themeid, @isallowmultisession,
+          'Y', @createdby, GETDATE()
+        );
+
+        SELECT CAST(SCOPE_IDENTITY() AS INT) AS client_code;
+      `);
+
+    const clientCode = clientResult.recordset[0]?.client_code;
+
+    if (!clientCode) {
+      throw new Error("Failed to generate client_code");
+    }
+
+    /* =========================
+       2️⃣ INSERT USER–CLIENT MAPPING
+    ========================= */
+    const mappingReq = new sql.Request(transaction);
+
+    await mappingReq
+      .input("userid", sql.Int, mappedUserId)
+      .input("client_code", sql.Int, clientCode)
+      .input("createdby", sql.Int, createdBy)
+      .query(`
+        INSERT INTO dbo.user_client_mapping (
+          userid,
+          client_code,
+          status,
+          createddate,
+          createdby
+        )
+        VALUES (
+          @userid,
+          @client_code,
+          'Y',
+          GETDATE(),
+          @createdby
+        )
+      `);
+
+    /* =========================
+       ✅ COMMIT TRANSACTION
+    ========================= */
+    await transaction.commit();
+    return clientCode;
+
+  } catch (err) {
+    /* =========================
+       ❌ ROLLBACK ON ERROR
+    ========================= */
+    try {
+      await transaction.rollback();
+    } catch (rollbackErr) {
+      console.error("Rollback failed:", rollbackErr);
+    }
+
+    console.error("Add Client Service Error:", err);
+    throw err; // important: propagate to controller
+  }
+};
 
 
 exports.updateClient = async (clientCode, data) => {
