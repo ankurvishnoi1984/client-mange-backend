@@ -21,3 +21,17 @@ exports.getUserList = async (req, res) => {
     });
   }
 };
+exports.insertUserClientMapping = async (req, res) => {
+  try {
+    const result = await userService.insertUserClientMapping(
+      req.body
+    );
+
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({
+      message: "Failed to insert user-client mapping",
+      error: err.message,
+    });
+  }
+};

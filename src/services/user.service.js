@@ -87,3 +87,85 @@ exports.getUserList = async ({
         }
     };
 };
+
+exports.insertUserClientMapping = async (payload) => {
+  const pool = await poolPromise;
+  const transaction = new sql.Transaction(pool);
+
+  try {
+    await transaction.begin();
+
+    // normalize input
+    let records = Array.isArray(payload.mappings)
+      ? payload.mappings
+      : [payload];
+
+    if (!records.length) {
+      throw new Error("No data provided for insert");
+    }
+
+    const request = new sql.Request(transaction);
+    const now = new Date();
+
+    // ✅ build values safely
+    const valuesArray = records.map((item, index) => {
+      if (!item.userid || !item.client_code) {
+        throw new Error(
+          `userid and client_code are required at row ${index + 1}`
+        );
+      }
+
+      request.input(`userid${index}`, sql.Int, item.userid);
+      request.input(`client_code${index}`, sql.Int, item.client_code);
+      request.input(
+        `status${index}`,
+        sql.Char(1),
+        item.status || "Y"
+      );
+
+      // ✅ createdby OPTIONAL
+      request.input(
+        `createdby${index}`,
+        sql.Int,
+        item.createdby ?? null
+      );
+
+      request.input(
+        `createddate${index}`,
+        sql.DateTime,
+        now
+      );
+
+      return `(
+        @userid${index},
+        @client_code${index},
+        @status${index},
+        @createddate${index},
+        @createdby${index}
+      )`;
+    });
+
+    const insertQuery = `
+      INSERT INTO dbo.user_client_mapping
+      (
+        userid,
+        client_code,
+        status,
+        createddate,
+        createdby
+      )
+      VALUES ${valuesArray.join(",")}
+    `;
+
+    await request.query(insertQuery);
+    await transaction.commit();
+
+    return {
+      message: "User-client mapping inserted successfully",
+      insertedCount: records.length,
+    };
+  } catch (err) {
+    await transaction.rollback();
+    throw err;
+  }
+};

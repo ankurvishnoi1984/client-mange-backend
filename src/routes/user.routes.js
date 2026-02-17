@@ -4,5 +4,6 @@ router.get(
   "/",
   controller.getUserList
 );
+router.post("/user-client-mapping",controller.insertUserClientMapping)
 
 module.exports = router;

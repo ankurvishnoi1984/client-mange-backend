@@ -1,6 +1,6 @@
 const clientService = require("../services/client.service");
 
-/*exports.addClient = async (req, res) => {
+exports.addClient = async (req, res) => {
   try {
     const data = {
       ...req.body,
@@ -8,13 +8,14 @@ const clientService = require("../services/client.service");
     };
 
     const result = await clientService.addClient(data, req.body.createdby);
-    res.json({ message: "Client added successfully",result });
+    console.log(result)
+    res.json({ message: "Client added successfully",client_code:result.client_code });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
-};*/
+};
 
-exports.addClient = async (req, res) => {
+/*exports.addClient = async (req, res) => {
   try {
     const { userid } = req.body;
 
@@ -48,7 +49,7 @@ exports.addClient = async (req, res) => {
       error: err.message
     });
   }
-};
+};*/
 
 
 exports.updateClient = async (req, res) => {
