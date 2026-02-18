@@ -35,3 +35,42 @@ exports.insertUserClientMapping = async (req, res) => {
     });
   }
 };
+
+exports.getUserClientMapping = async (req, res) => {
+  try {
+    const { page, limit, client_code, search } = req.query;
+
+    const result = await userService.getUserClientMapping({
+      page: Number(page) || 1,
+      limit: Number(limit) || 0,
+      client_code: client_code ? Number(client_code) : undefined,
+      search,
+    });
+
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({
+      message: "Failed to fetch user-client mapping",
+      error: err.message,
+    });
+  }
+};
+
+exports.removeUserClientMapping = async (req, res) => {
+  try {
+    const { userids, client_code, modifiedby } = req.body;
+
+    const result = await userService.removeUserClientMapping({
+      userids,
+      client_code,
+      modifiedby,
+    });
+
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({
+      message: "Failed to remove user-client mapping",
+      error: err.message,
+    });
+  }
+};

@@ -13,7 +13,7 @@ router.post(
 );
 
 router.put(
-  "/updateClient/:clientCode",
+  "/updateClient",
   uploadClientLogo,
   compressClientLogo,
   controller.updateClient

@@ -233,7 +233,8 @@ exports.getClientList = async ({ page = 1, limit = 10, search, status }) => {
       domain_url,
       clientlogo,
       status,
-      createddate
+      createddate,
+      isallowmultisession
     FROM dbo.client_mst
     ${whereClause}
     ORDER BY createddate DESC

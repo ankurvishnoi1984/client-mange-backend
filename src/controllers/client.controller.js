@@ -54,7 +54,7 @@ exports.addClient = async (req, res) => {
 
 exports.updateClient = async (req, res) => {
   try {
-    const { clientCode } = req.params;
+    const { clientCode } = req.body;
 
     const data = {
       ...req.body,

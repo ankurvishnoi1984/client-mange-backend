@@ -1,38 +1,38 @@
 const { poolPromise, sql } = require("../models/db");
 
 exports.getUserList = async ({
-    page = 1,
-    limit = 0,
-    search,
-    isactive,
-    status
+  page = 1,
+  limit = 0,
+  search,
+  isactive,
+  status
 }) => {
-    const pool = await poolPromise;
-    const offset = (page - 1) * limit;
+  const pool = await poolPromise;
+  const offset = (page - 1) * limit;
 
-    let whereClause = "WHERE 1=1";
+  let whereClause = "WHERE 1=1";
 
-    if (search) {
-        whereClause += `
+  if (search) {
+    whereClause += `
       AND (
         username LIKE '%' + @search + '%'
         OR displayname LIKE '%' + @search + '%'
       )
     `;
-    }
+  }
 
-    if (isactive) {
-        whereClause += " AND isactive = @isactive";
-    }
+  if (isactive) {
+    whereClause += " AND isactive = @isactive";
+  }
 
-    if (status !== undefined) {
-        whereClause += " AND status = @status";
-    }
+  if (status !== undefined) {
+    whereClause += " AND status = @status";
+  }
 
-    /* =========================
-       DATA QUERY
-    ========================= */
-    const dataQuery = `
+  /* =========================
+     DATA QUERY
+  ========================= */
+  const dataQuery = `
     SELECT
       userid,
       username,
@@ -50,42 +50,42 @@ exports.getUserList = async ({
     OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY
   `;
 
-    /* =========================
-       COUNT QUERY
-    ========================= */
-    const countQuery = `
+  /* =========================
+     COUNT QUERY
+  ========================= */
+  const countQuery = `
     SELECT COUNT(*) AS total
     FROM dbo.user_mst
     ${whereClause}
   `;
 
-    const request = pool.request()
-        .input("offset", sql.Int, offset)
-        .input("limit", sql.Int, limit);
+  const request = pool.request()
+    .input("offset", sql.Int, offset)
+    .input("limit", sql.Int, limit);
 
-    if (search) {
-        request.input("search", sql.VarChar(50), search);
+  if (search) {
+    request.input("search", sql.VarChar(50), search);
+  }
+
+  if (isactive) {
+    request.input("isactive", sql.Char(1), isactive);
+  }
+
+  if (status !== undefined) {
+    request.input("status", sql.Bit, status);
+  }
+
+  const dataResult = await request.query(dataQuery);
+  const countResult = await request.query(countQuery);
+
+  return {
+    data: dataResult.recordset,
+    pagination: {
+      page,
+      limit,
+      total: countResult.recordset[0].total
     }
-
-    if (isactive) {
-        request.input("isactive", sql.Char(1), isactive);
-    }
-
-    if (status !== undefined) {
-        request.input("status", sql.Bit, status);
-    }
-
-    const dataResult = await request.query(dataQuery);
-    const countResult = await request.query(countQuery);
-
-    return {
-        data: dataResult.recordset,
-        pagination: {
-            page,
-            limit,
-            total: countResult.recordset[0].total
-        }
-    };
+  };
 };
 
 exports.insertUserClientMapping = async (payload) => {
@@ -168,4 +168,135 @@ exports.insertUserClientMapping = async (payload) => {
     await transaction.rollback();
     throw err;
   }
+};
+exports.getUserClientMapping = async ({
+  page = 1,
+  limit = 0,
+  client_code,
+  search,
+}) => {
+  const pool = await poolPromise;
+  const offset = (page - 1) * limit;
+
+  let whereClause = "WHERE ucm.status='Y'";
+
+  if (client_code) {
+    whereClause += " AND ucm.client_code = @client_code";
+  }
+
+  if (search) {
+    whereClause += `
+      AND (
+        um.username LIKE '%' + @search + '%'
+        OR um.displayname LIKE '%' + @search + '%'
+      )
+    `;
+  }
+
+  // ======================
+  // DATA QUERY
+  // ======================
+  const dataQuery = `
+    SELECT
+      ucm.ucid,
+      ucm.userid,
+      ucm.client_code,
+      ucm.status,
+      ucm.createddate,
+      ucm.createdby,
+      um.username,
+      um.displayname,
+      um.isactive
+    FROM dbo.user_client_mapping ucm
+    LEFT JOIN dbo.user_mst um
+      ON um.userid = ucm.userid
+    ${whereClause}
+    ORDER BY ucm.createddate DESC
+    ${limit > 0
+      ? "OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY"
+      : ""
+    }
+  `;
+
+  // ======================
+  // COUNT QUERY
+  // ======================
+  const countQuery = `
+    SELECT COUNT(*) AS total
+    FROM dbo.user_client_mapping ucm
+    LEFT JOIN dbo.user_mst um
+      ON um.userid = ucm.userid
+    ${whereClause}
+  `;
+
+  const request = pool.request();
+
+  if (limit > 0) {
+    request.input("offset", sql.Int, offset);
+    request.input("limit", sql.Int, limit);
+  }
+
+  if (client_code) {
+    request.input("client_code", sql.Int, client_code);
+  }
+
+  if (search) {
+    request.input("search", sql.VarChar(100), search);
+  }
+
+  const dataResult = await request.query(dataQuery);
+  const countResult = await request.query(countQuery);
+
+  return {
+    data: dataResult.recordset,
+    pagination: {
+      page,
+      limit,
+      total: countResult.recordset[0].total,
+    },
+  };
+};
+
+exports.removeUserClientMapping = async ({
+  userids,
+  client_code,
+  modifiedby,
+}) => {
+  const pool = await poolPromise;
+
+  if (!Array.isArray(userids) || userids.length === 0) {
+    throw new Error("userids array is required");
+  }
+
+  if (!client_code) {
+    throw new Error("client_code is required");
+  }
+
+  const request = pool.request();
+
+  // build IN clause safely
+  const idParams = userids.map((id, index) => {
+    request.input(`userid${index}`, sql.Int, id);
+    return `@userid${index}`;
+  });
+
+  request.input("client_code", sql.Int, client_code);
+  request.input("modifiedby", sql.Int, modifiedby || null);
+  request.input("modifieddate", sql.DateTime, new Date());
+
+  const query = `
+    UPDATE dbo.user_client_mapping
+    SET
+      status = 'N'
+    WHERE client_code = @client_code
+      AND userid IN (${idParams.join(",")})
+      AND ISNULL(status,'Y') <> 'N'
+  `;
+
+  const result = await request.query(query);
+
+  return {
+    message: "User-client mapping removed successfully",
+    affectedRows: result.rowsAffected[0],
+  };
 };
