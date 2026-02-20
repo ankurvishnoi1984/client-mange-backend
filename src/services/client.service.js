@@ -203,7 +203,7 @@ exports.getClientByCode = async (clientCode) => {
   return result.recordset[0] || null;
 };
 
-exports.getClientList = async ({ page = 1, limit = 10, search, status }) => {
+exports.getClientList = async ({ page = 1, limit = 10, search, status="Y" }) => {
   const pool = await poolPromise;
 
   const offset = (page - 1) * limit;

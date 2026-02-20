@@ -71,7 +71,7 @@ exports.updateClient = async (req, res) => {
 
 exports.disableClient = async (req, res) => {
   try {
-    const { clientCode } = req.params;
+    const { clientCode } = req.body;
     await clientService.disableClient(clientCode);
     res.json({ message: "Client disabled successfully" });
   } catch (err) {

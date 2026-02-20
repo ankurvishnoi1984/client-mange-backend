@@ -19,8 +19,8 @@ router.put(
   controller.updateClient
 );
 
-router.delete(
-  "/disableClient/:clientCode",
+router.post(
+  "/disableClient",
   controller.disableClient
 );
 
